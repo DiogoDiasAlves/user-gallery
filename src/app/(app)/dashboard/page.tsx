@@ -12,7 +12,7 @@ export default function DashboardPage() {
   React.useEffect(() => {
     // Redireciona se não autenticado (após terminar o carregamento)
     if (!loading && !user) {
-      router.replace("/auth/login");
+      router.replace("/carrossel");
     }
   }, [loading, user, router]);
 

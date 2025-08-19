@@ -6,16 +6,17 @@ import {
     TableColumn,
     TableBody,
     TableRow,
-    TableCell,
-    getKeyValue
+    TableCell
 } from "@heroui/react";
 import { Button } from "@heroui/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/app/(config)/(http)/axios";
 import { ImagesProps } from "@/models/images";
 import { Eye, Trash } from "lucide-react";
-import { queryClient } from "@/app/(config)/(http)/react-query";
 import Header from "@/_components/header";
+import { useState } from "react";
+import ModalUpload from "@/_components/modalUpload";
+import button from "@/_components/button";
 
 
 const columns = [
@@ -41,39 +42,78 @@ export default function TableComponent2() {
             }
 
         },
-     
+
     })
     const queryClient = useQueryClient();
 
     const mutation = useMutation({
         mutationFn: async (id: number) => {
-          await api.delete(`/image/${id}`);
+            await api.delete(`/image/${id}`);
         },
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['table'] });
+            queryClient.invalidateQueries({ queryKey: ['table'] });
         },
-      });
-      
-      const handleDelete = (id: number) => {
-        mutation.mutate(id);
-      };
+    });
 
-      const mutationView = useMutation({
-        mutationFn: async(id: number) => {
+    const handleDelete = (id: number) => {
+        mutation.mutate(id);
+    };
+
+    const mutationView = useMutation({
+        mutationFn: async (id: number) => {
             await api.get(`/image/${id}`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['table'] });
         },
-      });
-      const handleView = (id: number) => {
+    });
+    const handleView = (id: number) => {
         mutationView.mutate(id);
-      };
+    };
 
+    // Adicione estado para o arquivo
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    // Mutation corrigida
+    const mutationUpload = useMutation({
+        mutationFn: async (file: File) => {
+            const formData = new FormData();
+            formData.append('image', file);
+            await api.post('/image/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['table'] });
+            setSelectedFile(null); // Limpar seleção
+        },
+    });
 
     return (
         <>   <Header></Header>
-            <div className="flex justify-end mb-2 mr-10"><Button className="bg-blue-500 text-white rounded-lg">Upload de imagem</Button></div>
+            <div className="flex justify-end mb-2 mr-10"><input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                style={{ display: 'none' }}
+                id="file-input"
+            />
+
+
+            <ModalUpload>
+        
+                {}
+
+            </ModalUpload>
+
+
+
+                <Button className="bg-blue-500 text-white rounded-lg" onClick={() => document.getElementById('file-input')?.click()}>
+                    Selecionar Imagem
+                </Button>
+            </div>
             <Table aria-label="Tabela estilizada" removeWrapper className="min-w-full"
             >
                 <TableHeader columns={columns}>
